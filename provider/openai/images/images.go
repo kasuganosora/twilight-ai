@@ -31,14 +31,14 @@ func WithBaseURL(baseURL string) Option {
 }
 
 func WithHTTPClient(client *http.Client) Option {
-	return func(p *Provider) { p.httpClient = client }
+	return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(client) }
 }
 
 // New creates a new OpenAI Images provider.
 func New(options ...Option) *Provider {
 	p := &Provider{
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{},
+		httpClient: utils.NewRobustHTTPClient(),
 	}
 	for _, opt := range options {
 		opt(p)

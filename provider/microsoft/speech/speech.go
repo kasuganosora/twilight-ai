@@ -43,7 +43,7 @@ func WithBaseURL(u string) Option {
 
 // WithHTTPClient replaces the default HTTP client.
 func WithHTTPClient(hc *http.Client) Option {
-	return func(p *Provider) { p.httpClient = hc }
+	return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(hc) }
 }
 
 // Provider implements sdk.SpeechProvider for Microsoft Azure TTS.
@@ -55,7 +55,7 @@ type Provider struct {
 
 // New creates a new Microsoft Azure TTS provider.
 func New(opts ...Option) *Provider {
-	p := &Provider{httpClient: &http.Client{}}
+	p := &Provider{httpClient: utils.NewRobustHTTPClient()}
 	for _, o := range opts {
 		o(p)
 	}

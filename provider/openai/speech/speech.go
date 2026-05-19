@@ -42,7 +42,7 @@ func WithBaseURL(url string) Option {
 
 // WithHTTPClient replaces the default HTTP client.
 func WithHTTPClient(hc *http.Client) Option {
-	return func(p *Provider) { p.httpClient = hc }
+	return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(hc) }
 }
 
 // Provider implements sdk.SpeechProvider for the OpenAI /audio/speech API.
@@ -56,7 +56,7 @@ type Provider struct {
 func New(opts ...Option) *Provider {
 	p := &Provider{
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{},
+		httpClient: utils.NewRobustHTTPClient(),
 	}
 	for _, o := range opts {
 		o(p)

@@ -30,7 +30,7 @@ func WithBaseURL(baseURL string) Option {
 }
 
 func WithHTTPClient(client *http.Client) Option {
-	return func(p *Provider) { p.httpClient = client }
+	return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(client) }
 }
 
 // WithTaskType sets the default task type for all embedding requests.
@@ -44,7 +44,7 @@ func WithTaskType(taskType string) Option {
 func New(options ...Option) *Provider {
 	p := &Provider{
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{},
+		httpClient: utils.NewRobustHTTPClient(),
 	}
 	for _, opt := range options {
 		opt(p)

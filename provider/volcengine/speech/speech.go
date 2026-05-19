@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/memohai/twilight-ai/internal/utils"
 	sdk "github.com/memohai/twilight-ai/sdk"
 )
 
@@ -57,7 +58,7 @@ func WithBaseURL(u string) Option {
 
 // WithHTTPClient replaces the default HTTP client.
 func WithHTTPClient(hc *http.Client) Option {
-	return func(p *Provider) { p.httpClient = hc }
+	return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(hc) }
 }
 
 // WithToken sets a static pre-obtained SAMI token, bypassing the GetToken call.
@@ -81,7 +82,7 @@ type Provider struct {
 func New(opts ...Option) *Provider {
 	p := &Provider{
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{},
+		httpClient: utils.NewRobustHTTPClient(),
 	}
 	for _, o := range opts {
 		o(p)

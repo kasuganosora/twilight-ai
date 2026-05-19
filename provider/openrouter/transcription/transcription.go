@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/memohai/twilight-ai/internal/utils"
 	sdk "github.com/memohai/twilight-ai/sdk"
 )
 
@@ -25,7 +26,7 @@ func WithAPIKey(key string) Option { return func(p *Provider) { p.apiKey = key }
 func WithBaseURL(url string) Option {
 	return func(p *Provider) { p.baseURL = strings.TrimRight(url, "/") }
 }
-func WithHTTPClient(hc *http.Client) Option { return func(p *Provider) { p.httpClient = hc } }
+func WithHTTPClient(hc *http.Client) Option { return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(hc) } }
 
 type Provider struct {
 	apiKey     string
@@ -34,7 +35,7 @@ type Provider struct {
 }
 
 func New(opts ...Option) *Provider {
-	p := &Provider{baseURL: defaultBaseURL, httpClient: &http.Client{}}
+	p := &Provider{baseURL: defaultBaseURL, httpClient: utils.NewRobustHTTPClient()}
 	for _, opt := range opts {
 		opt(p)
 	}

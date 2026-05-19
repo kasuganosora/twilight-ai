@@ -39,7 +39,7 @@ func WithBaseURL(baseURL string) Option {
 }
 
 func WithHTTPClient(client *http.Client) Option {
-	return func(p *Provider) { p.httpClient = client }
+	return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(client) }
 }
 
 // WithBedrockRegion enables AWS SigV4 authentication for Amazon Bedrock's
@@ -61,7 +61,7 @@ func WithBedrockCredentials(region, accessKeyID, secretAccessKey, sessionToken s
 func New(options ...Option) *Provider {
 	p := &Provider{
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{},
+		httpClient: utils.NewRobustHTTPClient(),
 	}
 	for _, o := range options {
 		o(p)

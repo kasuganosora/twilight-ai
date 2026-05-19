@@ -37,14 +37,14 @@ func WithBaseURL(baseURL string) Option {
 
 func WithHTTPClient(client *http.Client) Option {
 	return func(p *Provider) {
-		p.httpClient = client
+		p.httpClient = utils.EnsureRobustTransport(client)
 	}
 }
 
 func New(options ...Option) *Provider {
 	provider := &Provider{
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{},
+		httpClient: utils.NewRobustHTTPClient(),
 	}
 	for _, option := range options {
 		option(provider)

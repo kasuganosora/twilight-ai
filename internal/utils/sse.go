@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // ErrStreamDone can be returned from an SSE event handler to signal
@@ -35,7 +36,32 @@ type SSEEvent struct {
 //	    // process chunk ...
 //	    return nil
 //	})
-func FetchSSE(ctx context.Context, client *http.Client, opts *RequestOptions, onEvent func(*SSEEvent) error) error {
+//
+// FetchSSEOption configures FetchSSE behavior.
+type FetchSSEOption func(*fetchSSEConfig)
+
+type fetchSSEConfig struct {
+	idleTimeout time.Duration
+}
+
+// WithStreamIdleTimeout sets the maximum time to wait between successive
+// data chunks during SSE streaming. If the provider stops sending data for
+// longer than this duration, the stream is aborted with ErrStreamIdleTimeout.
+// Default is DefaultStreamIdleTimeout (90s).
+func WithStreamIdleTimeout(d time.Duration) FetchSSEOption {
+	return func(cfg *fetchSSEConfig) {
+		cfg.idleTimeout = d
+	}
+}
+
+func FetchSSE(ctx context.Context, client *http.Client, opts *RequestOptions, onEvent func(*SSEEvent) error, sseOpts ...FetchSSEOption) error {
+	cfg := &fetchSSEConfig{
+		idleTimeout: DefaultStreamIdleTimeout,
+	}
+	for _, opt := range sseOpts {
+		opt(cfg)
+	}
+
 	if opts.Headers == nil {
 		opts.Headers = make(map[string]string)
 	}
@@ -58,7 +84,9 @@ func FetchSSE(ctx context.Context, client *http.Client, opts *RequestOptions, on
 		return parseAPIError(resp)
 	}
 
-	scanner := bufio.NewScanner(resp.Body)
+	// Wrap body with idle timeout reader to detect provider stalls
+	idleReader := NewIdleTimeoutReader(ctx, resp.Body, cfg.idleTimeout)
+	scanner := bufio.NewScanner(idleReader)
 	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024)
 	event := &SSEEvent{}
 	var dataLines []string

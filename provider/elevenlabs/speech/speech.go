@@ -41,7 +41,7 @@ func WithBaseURL(rawURL string) Option {
 
 // WithHTTPClient replaces the default HTTP client.
 func WithHTTPClient(hc *http.Client) Option {
-	return func(p *Provider) { p.httpClient = hc }
+	return func(p *Provider) { p.httpClient = utils.EnsureRobustTransport(hc) }
 }
 
 // Provider implements sdk.SpeechProvider for ElevenLabs TTS.
@@ -55,7 +55,7 @@ type Provider struct {
 func New(opts ...Option) *Provider {
 	p := &Provider{
 		baseURL:    defaultBaseURL,
-		httpClient: &http.Client{},
+		httpClient: utils.NewRobustHTTPClient(),
 	}
 	for _, o := range opts {
 		o(p)
